@@ -14,19 +14,28 @@ type Payload struct {
 }
 
 func addHandler(w http.ResponseWriter, r *http.Request) {
-	var req Payload
-	if err := parseJSON(r, &req); err != nil {
+	payload, err := parseJSON(r)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]int{"result": req.Number1 + req.Number2})
+	writeJSON(w, http.StatusOK, map[string]int{"result": payload.Number1 + payload.Number2})
+}
+
+func substractHandler(w http.ResponseWriter, r *http.Request) {
+	payload, err := parseJSON(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+
+	writeJSON(w, http.StatusOK, map[string]int{"result": payload.Number1 - payload.Number2})
 }
 
 func main() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("POST /add", addHandler)
+	mux.HandleFunc("POST /substract", substractHandler)
 
 	server := http.Server{
 		Handler: mux,
@@ -41,14 +50,19 @@ func main() {
 	}
 }
 
-func parseJSON(r *http.Request, v any) error {
+func parseJSON(r *http.Request) (Payload, error) {
+	var payload Payload
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		return err
+		return Payload{}, err
 	}
 	defer r.Body.Close()
 
-	return json.Unmarshal(body, v)
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return Payload{}, err
+	}
+
+	return payload, nil
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) error {
