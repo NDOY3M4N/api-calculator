@@ -31,11 +31,22 @@ func substractHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]int{"result": payload.Number1 - payload.Number2})
 }
 
+func multiplyHandler(w http.ResponseWriter, r *http.Request) {
+	payload, err := parseJSON(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]int{"result": payload.Number1 * payload.Number2})
+}
+
 func main() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("POST /add", addHandler)
 	mux.HandleFunc("POST /substract", substractHandler)
+	mux.HandleFunc("POST /multiply", multiplyHandler)
 
 	server := http.Server{
 		Handler: mux,
