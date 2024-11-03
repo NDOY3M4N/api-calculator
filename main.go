@@ -17,6 +17,7 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 	payload, err := parseJSON(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	writeJSON(w, http.StatusOK, map[string]int{"result": payload.Number1 + payload.Number2})
@@ -26,6 +27,7 @@ func substractHandler(w http.ResponseWriter, r *http.Request) {
 	payload, err := parseJSON(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	writeJSON(w, http.StatusOK, map[string]int{"result": payload.Number1 - payload.Number2})
