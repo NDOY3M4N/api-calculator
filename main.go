@@ -16,7 +16,7 @@ type Payload struct {
 func addHandler(w http.ResponseWriter, r *http.Request) {
 	payload, err := parseJSON(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
@@ -26,7 +26,7 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 func substractHandler(w http.ResponseWriter, r *http.Request) {
 	payload, err := parseJSON(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
@@ -36,7 +36,7 @@ func substractHandler(w http.ResponseWriter, r *http.Request) {
 func multiplyHandler(w http.ResponseWriter, r *http.Request) {
 	payload, err := parseJSON(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
@@ -46,12 +46,12 @@ func multiplyHandler(w http.ResponseWriter, r *http.Request) {
 func divideHandler(w http.ResponseWriter, r *http.Request) {
 	payload, err := parseJSON(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
 	if payload.Number2 == 0 {
-		http.Error(w, "Division by zero", http.StatusBadRequest)
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Division by zero"})
 		return
 	}
 
