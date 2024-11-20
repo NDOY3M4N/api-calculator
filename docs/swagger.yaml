@@ -1,0 +1,137 @@
+basePath: /api/v1
+definitions:
+  main.APIError:
+    properties:
+      message:
+        type: string
+    type: object
+  main.APISuccess:
+    properties:
+      result:
+        type: integer
+    type: object
+  main.Payload:
+    properties:
+      number1:
+        type: integer
+      number2:
+        type: integer
+    type: object
+host: localhost:3000
+info:
+  contact:
+    email: pa.ndoye@outlook.com
+    name: Abdoulaye NDOYE
+    url: https://github.com/NDOY3M4N
+  description: This is a sample server for Calculator API
+  license:
+    name: MIT
+    url: https://github.com/NDOY3M4N/calculator-api/blob/main/LICENSE
+  title: Calculator API
+  version: "1.0"
+paths:
+  /add:
+    post:
+      consumes:
+      - application/json
+      description: Add two numbers together
+      parameters:
+      - description: Numbers needed for the operation
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.Payload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APISuccess'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.APIError'
+      summary: Add two numbers
+      tags:
+      - Math
+  /divide:
+    post:
+      consumes:
+      - application/json
+      description: Divide two numbers together
+      parameters:
+      - description: Numbers needed for the operation
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.Payload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APISuccess'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.APIError'
+      summary: Divide two numbers
+      tags:
+      - Math
+  /multiply:
+    post:
+      consumes:
+      - application/json
+      description: Multiply two numbers together
+      parameters:
+      - description: Numbers needed for the operation
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.Payload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APISuccess'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.APIError'
+      summary: Multiply two numbers
+      tags:
+      - Math
+  /substract:
+    post:
+      consumes:
+      - application/json
+      description: Substract two numbers together
+      parameters:
+      - description: Numbers needed for the operation
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.Payload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APISuccess'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.APIError'
+      summary: Substract two numbers
+      tags:
+      - Math
+swagger: "2.0"
