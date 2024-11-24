@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 )
 
@@ -88,6 +89,12 @@ func divideHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if payload.Number2 == 0 {
+		logger.Error("Division by zero",
+			slog.Int("statusCode", http.StatusBadRequest),
+			slog.String("remoteAddr", r.RemoteAddr),
+			slog.String("method", r.Method),
+			slog.String("path", r.URL.Path),
+		)
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Division by zero"})
 		return
 	}

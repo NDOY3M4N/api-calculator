@@ -2,7 +2,7 @@ basePath: /api/v1
 definitions:
   main.APIError:
     properties:
-      message:
+      error:
         type: string
     type: object
   main.APISuccess:

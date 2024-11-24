@@ -188,7 +188,7 @@ const docTemplate = `{
         "main.APIError": {
             "type": "object",
             "properties": {
-                "message": {
+                "error": {
                     "type": "string"
                 }
             }
