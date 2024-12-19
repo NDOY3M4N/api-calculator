@@ -9,6 +9,8 @@ import (
 
 	"github.com/MarceloPetrucio/go-scalar-api-reference"
 	"github.com/charmbracelet/log"
+
+	"github.com/NDOY3M4N/api-calculator/middleware"
 )
 
 type Payload struct {
@@ -54,9 +56,12 @@ func main() {
 		"/scalar",
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			htmlContent, err := scalar.ApiReferenceHTML(&scalar.Options{
-				SpecURL:       "./docs/swagger.json",
-				CustomOptions: scalar.CustomOptions{PageTitle: "P4P1's API doc"},
-				DarkMode:      true,
+				SpecURL: "./docs/swagger.json",
+				CustomOptions: scalar.CustomOptions{
+					PageTitle: "P4P1's API doc",
+				},
+				Layout:   scalar.LayoutClassic,
+				DarkMode: true,
 			})
 			if err != nil {
 				fmt.Printf("%v", err)
@@ -69,7 +74,7 @@ func main() {
 	v1 := http.NewServeMux()
 	v1.Handle("/api/v1/", http.StripPrefix("/api/v1", router))
 
-	// Combine the v1 handler and the Swagger handler
+	// Combine the v1 handler and the Scalar handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/scalar" || strings.HasPrefix(r.URL.Path, "/scalar") {
 			scalarHandler.ServeHTTP(w, r)
@@ -79,11 +84,12 @@ func main() {
 	})
 
 	server := http.Server{
-		Handler: Logging(logger, handler),
+		Handler: middleware.Logging(logger, handler),
 		Addr:    fmt.Sprintf(":%d", PORT),
 	}
 
 	logger.Info(fmt.Sprintf("Server started on port :%d", PORT))
+	logger.Info(fmt.Sprintf("API documentation available on http://localhost:%d/scalar", PORT))
 
 	if err := server.ListenAndServe(); err != nil {
 		logger.Error("Error", err)
