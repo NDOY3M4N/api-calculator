@@ -1,27 +1,29 @@
 # syntax=docker/dockerfile:1
 
-# Build the application from source
+# ============================================
+# 1st Stage: Build the application from source
+# ============================================
 FROM golang:1.23-alpine AS build-stage
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
 COPY go.mod go.sum ./
-RUN go mod download && go mod verify
 
 COPY . ./
 
-RUN CGO_ENABLED=0 GOOS=linux go build -v -o /api-calculator
+# Install dependencies and build
+RUN go mod download && go mod verify
+RUN CGO_ENABLED=0 GOOS=linux go build -v -o /app/api-calculator
 
-# Run the tests in the container
-FROM build-stage AS run-test-stage
-# RUN go test -v ./...
-
-# Deploy the application binary into a lean image
-FROM gcr.io/distroless/base-debian11 AS build-release-stage
+# =================================================
+# 2nd Stage: Deploy app binary into a lean image
+# =================================================
+FROM gcr.io/distroless/base-debian11 AS build-release
 
 WORKDIR /
 
-COPY --from=build-stage /api-calculator /api-calculator
+COPY --from=build-stage /app/api-calculator /api-calculator
+COPY --from=build-stage /app/docs ./docs
 
 EXPOSE 8080
 
