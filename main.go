@@ -9,22 +9,7 @@ import (
 
 	"github.com/MarceloPetrucio/go-scalar-api-reference"
 	"github.com/charmbracelet/log"
-
-	"github.com/NDOY3M4N/api-calculator/middleware"
 )
-
-type Payload struct {
-	Number1 int `json:"number1"`
-	Number2 int `json:"number2"`
-}
-
-type APIError struct {
-	Error string
-}
-
-type APISuccess struct {
-	Result int
-}
 
 const PORT int = 3000
 
@@ -32,21 +17,22 @@ var logger = slog.New(log.New(os.Stderr))
 
 // @title         Calculator API
 // @version       1.0
-// @description   This is a sample server for Calculator API
+// @description   This is a simple server for Calculator API
 //
 // @contact.name  Abdoulaye NDOYE
 // @contact.url   https://github.com/NDOY3M4N
 // @contact.email pa.ndoye@outlook.com
 //
 // @license.name  MIT
-// @license.url   https://github.com/NDOY3M4N/calculator-api/blob/main/LICENSE
+// @license.url   https://github.com/NDOY3M4N/api-calculator/blob/main/LICENSE
 //
-// @host          localhost:3000
-// @BasePath      /api/v1
+// @servers.url http://localhost:3000/api/v1
+// @servers.description Development server
 func main() {
 	router := http.NewServeMux()
 
 	router.HandleFunc("POST /add", addHandler)
+	router.HandleFunc("POST /sum", sumHandler)
 	router.HandleFunc("POST /substract", substractHandler)
 	router.HandleFunc("POST /multiply", multiplyHandler)
 	router.HandleFunc("POST /divide", divideHandler)
@@ -58,9 +44,9 @@ func main() {
 			htmlContent, err := scalar.ApiReferenceHTML(&scalar.Options{
 				SpecURL: "./docs/swagger.json",
 				CustomOptions: scalar.CustomOptions{
-					PageTitle: "P4P1's API doc",
+					PageTitle: "P4P1's Calculator API doc",
 				},
-				Layout:   scalar.LayoutClassic,
+				// Layout:   scalar.LayoutClassic,
 				DarkMode: true,
 			})
 			if err != nil {
@@ -84,7 +70,7 @@ func main() {
 	})
 
 	server := http.Server{
-		Handler: middleware.Logging(logger, handler),
+		Handler: Logging(logger, handler),
 		Addr:    fmt.Sprintf(":%d", PORT),
 	}
 
@@ -92,6 +78,6 @@ func main() {
 	logger.Info(fmt.Sprintf("API documentation available on http://localhost:%d/scalar", PORT))
 
 	if err := server.ListenAndServe(); err != nil {
-		logger.Error("Error", err)
+		logger.Error("Error", err.Error(), nil)
 	}
 }

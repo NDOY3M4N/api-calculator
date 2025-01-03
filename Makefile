@@ -4,7 +4,7 @@ run:
 	@go run *.go
 
 docs:
-	@swag init
+	@swag init --v3.1
 
 run-with-docs:
 	@make docs
