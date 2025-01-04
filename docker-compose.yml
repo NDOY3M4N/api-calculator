@@ -1,0 +1,10 @@
+services:
+  api-calculator:
+    build:
+      context: .
+    container_name: rest-server
+    ports:
+      - 3000:3000
+    deploy:
+      restart_policy:
+        condition: on-failure
