@@ -42,12 +42,12 @@ type APISuccess struct {
 func addHandler(w http.ResponseWriter, r *http.Request) {
 	var payload Payload
 	if err := decodeJSON(r, &payload); err != nil {
-		writeError(w, http.StatusBadRequest, err)
+		writeError(w, r, http.StatusBadRequest, err)
 		return
 	}
 
 	result := payload.Number1 + payload.Number2
-	writeSuccess(w, http.StatusOK, result)
+	writeSuccess(w, r, http.StatusOK, result)
 }
 
 // Sum numbers
@@ -64,12 +64,12 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 func sumHandler(w http.ResponseWriter, r *http.Request) {
 	var payload PayloadSum
 	if err := decodeJSON(r, &payload); err != nil {
-		writeError(w, http.StatusBadRequest, err)
+		writeError(w, r, http.StatusBadRequest, err)
 		return
 	}
 
 	if len(payload) < 2 {
-		writeError(w, http.StatusBadRequest, ErrLengthSum)
+		writeError(w, r, http.StatusBadRequest, ErrLengthSum)
 		return
 	}
 
@@ -78,7 +78,7 @@ func sumHandler(w http.ResponseWriter, r *http.Request) {
 		result += num
 	}
 
-	writeSuccess(w, http.StatusOK, result)
+	writeSuccess(w, r, http.StatusOK, result)
 }
 
 // Substract two numbers
@@ -95,12 +95,12 @@ func sumHandler(w http.ResponseWriter, r *http.Request) {
 func substractHandler(w http.ResponseWriter, r *http.Request) {
 	var payload Payload
 	if err := decodeJSON(r, &payload); err != nil {
-		writeError(w, http.StatusBadRequest, err)
+		writeError(w, r, http.StatusBadRequest, err)
 		return
 	}
 
 	result := payload.Number1 - payload.Number2
-	writeSuccess(w, http.StatusOK, result)
+	writeSuccess(w, r, http.StatusOK, result)
 }
 
 // Multiply two numbers
@@ -117,7 +117,7 @@ func substractHandler(w http.ResponseWriter, r *http.Request) {
 func multiplyHandler(w http.ResponseWriter, r *http.Request) {
 	var payload Payload
 	if err := decodeJSON(r, &payload); err != nil {
-		writeError(w, http.StatusBadRequest, err)
+		writeError(w, r, http.StatusBadRequest, err)
 		return
 	}
 
@@ -139,24 +139,17 @@ func multiplyHandler(w http.ResponseWriter, r *http.Request) {
 func divideHandler(w http.ResponseWriter, r *http.Request) {
 	var payload Payload
 	if err := decodeJSON(r, &payload); err != nil {
-		writeError(w, http.StatusBadRequest, err)
+		writeError(w, r, http.StatusBadRequest, err)
 		return
 	}
 
 	if payload.Number2 == 0 {
-		logger.Error("Division by zero",
-			slog.Int("statusCode", http.StatusBadRequest),
-			slog.String("remoteAddr", r.RemoteAddr),
-			slog.String("method", r.Method),
-			slog.String("path", r.URL.Path),
-		)
-
-		writeError(w, http.StatusBadRequest, ErrDividyByZero)
+		writeError(w, r, http.StatusBadRequest, ErrDividyByZero)
 		return
 	}
 
 	result := payload.Number1 / payload.Number2
-	writeSuccess(w, http.StatusOK, result)
+	writeSuccess(w, r, http.StatusOK, result)
 }
 
 func decodeJSON(r *http.Request, payload any) error {
@@ -168,16 +161,40 @@ func decodeJSON(r *http.Request, payload any) error {
 }
 
 func encodeJSON(w http.ResponseWriter, statusCode int, payload any) error {
-	w.Header().Add("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 
 	return json.NewEncoder(w).Encode(payload)
 }
 
-func writeSuccess(w http.ResponseWriter, statusCode int, payload int) error {
+func writeSuccess(w http.ResponseWriter, r *http.Request, statusCode int, payload int) error {
+	reqID := r.Context().Value(requestIDKey).(string)
+
+	logger.Info("Request successful",
+		slog.Int("statusCode", statusCode),
+		slog.String("remoteAddr", r.RemoteAddr),
+		slog.Group("request",
+			slog.String("id", reqID),
+			slog.String("method", r.Method),
+			slog.String("path", r.URL.Path),
+		),
+	)
+
 	return encodeJSON(w, statusCode, APISuccess{payload})
 }
 
-func writeError(w http.ResponseWriter, statusCode int, err error) error {
+func writeError(w http.ResponseWriter, r *http.Request, statusCode int, err error) error {
+	reqID := r.Context().Value(requestIDKey).(string)
+
+	logger.Error(err.Error(),
+		slog.Int("statusCode", statusCode),
+		slog.String("remoteAddr", r.RemoteAddr),
+		slog.Group("request",
+			slog.String("id", reqID),
+			slog.String("method", r.Method),
+			slog.String("path", r.URL.Path),
+		),
+	)
+
 	return encodeJSON(w, statusCode, APIError{err.Error()})
 }

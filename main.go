@@ -69,8 +69,10 @@ func main() {
 		}
 	})
 
+	stack := CreateStack(AddRequestId, Logger)
+
 	server := http.Server{
-		Handler: Logging(logger, handler),
+		Handler: stack(handler),
 		Addr:    fmt.Sprintf(":%d", PORT),
 	}
 
