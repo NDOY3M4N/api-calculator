@@ -24,7 +24,7 @@ var logger = slog.New(log.New(os.Stderr))
 // @contact.email pa.ndoye@outlook.com
 //
 // @license.name  MIT
-// @license.url   https://github.com/NDOY3M4N/api-calculator/blob/main/LICENSE
+// @license.url   https://github.com/NDOY3M4N/api-calculator/blob/main/LICENSE.md
 //
 // @servers.url http://localhost:3000/api/v1
 // @servers.description Development server
