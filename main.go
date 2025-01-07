@@ -39,7 +39,7 @@ func main() {
 
 	// Define a separate handler for the /scalar endpoint
 	scalarHandler := http.StripPrefix(
-		"/scalar",
+		"/docs",
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			htmlContent, err := scalar.ApiReferenceHTML(&scalar.Options{
 				SpecURL: "./docs/swagger.json",
@@ -62,7 +62,7 @@ func main() {
 
 	// Combine the v1 handler and the Scalar handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/scalar" || strings.HasPrefix(r.URL.Path, "/scalar") {
+		if r.URL.Path == "/docs" || strings.HasPrefix(r.URL.Path, "/docs") {
 			scalarHandler.ServeHTTP(w, r)
 		} else {
 			v1.ServeHTTP(w, r)
@@ -77,7 +77,7 @@ func main() {
 	}
 
 	logger.Info(fmt.Sprintf("Server started on port :%d", PORT))
-	logger.Info(fmt.Sprintf("API documentation available on http://localhost:%d/scalar", PORT))
+	logger.Info(fmt.Sprintf("API documentation available on http://localhost:%d/docs", PORT))
 
 	if err := server.ListenAndServe(); err != nil {
 		logger.Error("Error", err.Error(), nil)

@@ -30,7 +30,7 @@ info:
   description: This is a simple server for Calculator API
   license:
     name: MIT
-    url: https://github.com/NDOY3M4N/api-calculator/blob/main/LICENSE
+    url: https://github.com/NDOY3M4N/api-calculator/blob/main/LICENSE.md
   title: Calculator API
   version: "1.0"
 openapi: 3.1.0
