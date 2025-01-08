@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -9,9 +10,15 @@ import (
 
 	"github.com/MarceloPetrucio/go-scalar-api-reference"
 	"github.com/charmbracelet/log"
+
+	"github.com/NDOY3M4N/api-calculator/ratelimit"
 )
 
-const PORT int = 3000
+const (
+	port       int   = 3000
+	bucketSize int64 = 5
+	bucketRate int64 = 3
+)
 
 var logger = slog.New(log.New(os.Stderr))
 
@@ -69,15 +76,19 @@ func main() {
 		}
 	})
 
-	stack := CreateStack(AddRequestId, Logger)
+	bucket := ratelimit.NewTokenBucket(bucketSize, bucketRate)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	bucket.Start(ctx)
 
+	stack := CreateStack(AddRequestId, Logger, RateLimit(bucket))
 	server := http.Server{
 		Handler: stack(handler),
-		Addr:    fmt.Sprintf(":%d", PORT),
+		Addr:    fmt.Sprintf(":%d", port),
 	}
 
-	logger.Info(fmt.Sprintf("Server started on port :%d", PORT))
-	logger.Info(fmt.Sprintf("API documentation available on http://localhost:%d/docs", PORT))
+	logger.Info(fmt.Sprintf("Server started on port :%d", port))
+	logger.Info(fmt.Sprintf("API documentation available on http://localhost:%d/docs", port))
 
 	if err := server.ListenAndServe(); err != nil {
 		logger.Error("Error", err.Error(), nil)

@@ -8,6 +8,8 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/NDOY3M4N/api-calculator/ratelimit"
 )
 
 type contextKey string
@@ -24,6 +26,38 @@ type wrapperWritter struct {
 func (w *wrapperWritter) WriteHeader(code int) {
 	w.statusCode = code
 	w.ResponseWriter.WriteHeader(code)
+}
+
+func RateLimit(tb *ratelimit.TokenBucket) Middleware {
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			reqID := r.Context().Value(requestIDKey).(string)
+			tb.Consume()
+			remaining := len(tb.Tokens)
+			w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%d", bucketSize))
+			w.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%d", remaining))
+
+			if remaining == 0 {
+				logger.Warn("Rate limit exceeded. Please wait before making more requests.",
+					slog.Int("statusCode", http.StatusTooManyRequests),
+					slog.String("remoteAddr", r.RemoteAddr),
+					slog.Group("request",
+						slog.String("id", reqID),
+						slog.String("method", r.Method),
+						slog.String("path", r.URL.Path),
+					),
+				)
+
+				reset := time.Now().Add(time.Second).Unix()
+				w.Header().Set("X-RateLimit-Reset", fmt.Sprintf("%d", reset))
+				w.Header().Set("Retry-After", "1")
+				w.WriteHeader(http.StatusTooManyRequests)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		}
+	}
 }
 
 func AddRequestId(next http.HandlerFunc) http.HandlerFunc {
