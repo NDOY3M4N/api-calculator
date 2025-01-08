@@ -40,6 +40,7 @@ jobs:
           flavor: |
             latest=true
           tags: |
+            type=sha
             type=ref,event=branch
             type=ref,event=tag
             type=semver,pattern={{version}}
