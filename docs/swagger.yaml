@@ -8,16 +8,16 @@ components:
     main.APISuccess:
       properties:
         result:
-          type: integer
+          type: number
       type: object
     main.Payload:
       properties:
         number1:
           example: 6
-          type: integer
+          type: number
         number2:
           example: 9
-          type: integer
+          type: number
       type: object
 externalDocs:
   description: ""
@@ -147,7 +147,7 @@ paths:
           application/json:
             schema:
               items:
-                type: integer
+                type: number
               type: array
         description: Array of numbers needed for the operation
         required: true

@@ -17,7 +17,7 @@ import (
 const (
 	port       int   = 3000
 	bucketSize int64 = 5
-	bucketRate int64 = 3
+	bucketRate int64 = 2
 )
 
 var logger = slog.New(log.New(os.Stderr))

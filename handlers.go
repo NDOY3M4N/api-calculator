@@ -13,19 +13,21 @@ var (
 	ErrLengthSum    = errors.New("provide at least 2 numbers")
 )
 
+type number float64
+
 type Payload struct {
-	Number1 int `json:"number1" example:"6"`
-	Number2 int `json:"number2" example:"9"`
+	Number1 number `json:"number1" example:"6"`
+	Number2 number `json:"number2" example:"9"`
 }
 
-type PayloadSum []int
+type PayloadSum []number
 
 type APIError struct {
 	Error string `json:"error"`
 }
 
 type APISuccess struct {
-	Result int `json:"result"`
+	Result number `json:"result"`
 }
 
 // Add two numbers
@@ -73,7 +75,7 @@ func sumHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var result int
+	var result number
 	for _, num := range payload {
 		result += num
 	}
@@ -167,7 +169,7 @@ func encodeJSON(w http.ResponseWriter, statusCode int, payload any) error {
 	return json.NewEncoder(w).Encode(payload)
 }
 
-func writeSuccess(w http.ResponseWriter, r *http.Request, statusCode int, payload int) error {
+func writeSuccess(w http.ResponseWriter, r *http.Request, statusCode int, payload number) error {
 	reqID := r.Context().Value(requestIDKey).(string)
 
 	logger.Info("Request successful",
