@@ -1,3 +1,7 @@
+[![Package build](https://github.com/NDOY3M4N/api-calculator/actions/workflows/deploy.yml/badge.svg?event=release)](https://github.com/NDOY3M4N/api-calculator/actions/workflows/deploy.yml)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/NDOY3M4N/api-calculator)
+![Golang Version](https://img.shields.io/badge/Go-1.23-blue?logo=go)
+
 # Backend API - Calculator
 
 The goal of this project is to create an http+json API for a calculator service.
