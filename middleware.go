@@ -33,9 +33,12 @@ func RateLimit(tb *ratelimit.TokenBucket) Middleware {
 		return func(w http.ResponseWriter, r *http.Request) {
 			reqID := r.Context().Value(requestIDKey).(string)
 			tb.Consume()
+
 			remaining := len(tb.Tokens)
+			reset := time.Now().Add(time.Second).Unix()
 			w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%d", bucketSize))
 			w.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%d", remaining))
+			w.Header().Set("X-RateLimit-Reset", fmt.Sprintf("%d", reset))
 
 			if remaining == 0 {
 				logger.Warn("Rate limit exceeded. Please wait before making more requests.",
@@ -48,8 +51,6 @@ func RateLimit(tb *ratelimit.TokenBucket) Middleware {
 					),
 				)
 
-				reset := time.Now().Add(time.Second).Unix()
-				w.Header().Set("X-RateLimit-Reset", fmt.Sprintf("%d", reset))
 				w.Header().Set("Retry-After", "1")
 				w.WriteHeader(http.StatusTooManyRequests)
 				return
