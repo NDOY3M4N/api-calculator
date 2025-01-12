@@ -3,8 +3,11 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
+
+	"github.com/NDOY3M4N/api-calculator/repository"
 )
 
 var (
@@ -28,6 +31,51 @@ type APIError struct {
 
 type APISuccess struct {
 	Result number `json:"result"`
+}
+
+type PayloadLogin struct {
+	Pseudo string `json:"pseudo"`
+}
+
+func loginHandler(repo *repository.Repository) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var payload PayloadLogin
+		if err := decodeJSON(r, &payload); err != nil {
+			writeError(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		if payload.Pseudo == "" {
+			writeError(w, r, http.StatusBadRequest, fmt.Errorf("pseudo should not be empty"))
+			return
+		}
+
+		user, err := repo.FindUserByPseudo(payload.Pseudo)
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, fmt.Errorf("error finding user by pseudo"))
+			return
+		}
+
+		token, err := GenerateToken(int(user.Id))
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, fmt.Errorf("error generating token"))
+			return
+		}
+
+		reqID := r.Context().Value(requestIDKey).(string)
+
+		logger.Info("Request successful",
+			slog.Int("statusCode", http.StatusOK),
+			slog.String("remoteAddr", r.RemoteAddr),
+			slog.Group("request",
+				slog.String("id", reqID),
+				slog.String("method", r.Method),
+				slog.String("path", r.URL.Path),
+			),
+		)
+
+		encodeJSON(w, http.StatusOK, map[string]string{"token": token})
+	}
 }
 
 // Add two numbers

@@ -7,14 +7,22 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
+
 	"github.com/NDOY3M4N/api-calculator/ratelimit"
+	"github.com/NDOY3M4N/api-calculator/repository"
 )
 
 type contextKey string
 
-const requestIDKey contextKey = "requestID"
+const (
+	requestIDKey contextKey = "requestID"
+	userIDKey    contextKey = "userID"
+)
 
 type Middleware func(http.HandlerFunc) http.HandlerFunc
 
@@ -26,6 +34,56 @@ type wrapperWritter struct {
 func (w *wrapperWritter) WriteHeader(code int) {
 	w.statusCode = code
 	w.ResponseWriter.WriteHeader(code)
+}
+
+func IsAuthenticated(repo *repository.Repository) Middleware {
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			header := r.Header.Get("Authorization")
+			if header == "" {
+				writeError(
+					w,
+					r,
+					http.StatusUnauthorized,
+					fmt.Errorf("missing authorization header"),
+				)
+				return
+			}
+
+			token, err := ValidateToken(strings.TrimPrefix(header, "Bearer "))
+			if err != nil {
+				writeError(
+					w,
+					r,
+					http.StatusForbidden,
+					fmt.Errorf("error validating token: %s", err),
+				)
+				return
+			}
+
+			if !token.Valid {
+				writeError(w, r, http.StatusForbidden, fmt.Errorf("token invalid"))
+				return
+			}
+
+			var userIDStr string
+			if claims, ok := token.Claims.(jwt.MapClaims); ok {
+				userIDStr = claims["userID"].(string)
+			} else {
+				writeError(w, r, http.StatusInternalServerError, fmt.Errorf("failed to get claims from token"))
+				return
+			}
+
+			userID, _ := strconv.Atoi(userIDStr)
+			if _, err = repo.FindUserById(userID); err != nil {
+				writeError(w, r, http.StatusUnauthorized, fmt.Errorf("permission denied"))
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), userIDKey, userID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		}
+	}
 }
 
 func RateLimit(tb *ratelimit.TokenBucket) Middleware {

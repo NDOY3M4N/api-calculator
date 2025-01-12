@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"github.com/charmbracelet/log"
 
 	"github.com/NDOY3M4N/api-calculator/ratelimit"
+	"github.com/NDOY3M4N/api-calculator/repository"
 )
 
 const (
@@ -36,13 +38,48 @@ var logger = slog.New(log.New(os.Stderr))
 // @servers.url http://localhost:3000/api/v1
 // @servers.description Development server
 func main() {
-	router := http.NewServeMux()
+	db, err := NewDatabase(envs.DBString)
+	if err != nil {
+		panic(err)
+	}
 
-	router.HandleFunc("POST /add", addHandler)
-	router.HandleFunc("POST /sum", sumHandler)
-	router.HandleFunc("POST /substract", substractHandler)
-	router.HandleFunc("POST /multiply", multiplyHandler)
-	router.HandleFunc("POST /divide", divideHandler)
+	initStorage(db)
+	defer db.Close()
+
+	repo := repository.New(db)
+
+	router := http.NewServeMux()
+	handler := registerRoutes(router, repo)
+
+	bucket := ratelimit.NewTokenBucket(bucketSize, bucketRate)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	bucket.Start(ctx)
+
+	stack := CreateStack(AddRequestId, Logger, RateLimit(bucket))
+	server := http.Server{
+		Handler: stack(handler),
+		Addr:    fmt.Sprintf(":%d", port),
+	}
+
+	logger.Info(fmt.Sprintf("Server started on port :%d", port))
+	logger.Info(fmt.Sprintf("API documentation available on http://localhost:%d/docs", port))
+
+	if err := server.ListenAndServe(); err != nil {
+		logger.Error("HTTP server initialization", slog.String("message", err.Error()))
+		os.Exit(1)
+	}
+}
+
+func registerRoutes(router *http.ServeMux, repo *repository.Repository) http.HandlerFunc {
+	isAuth := IsAuthenticated(repo)
+
+	router.HandleFunc("POST /login", loginHandler(repo))
+	router.HandleFunc("POST /add", isAuth(addHandler))
+	router.HandleFunc("POST /sum", isAuth(sumHandler))
+	router.HandleFunc("POST /substract", isAuth(substractHandler))
+	router.HandleFunc("POST /multiply", isAuth(multiplyHandler))
+	router.HandleFunc("POST /divide", isAuth(divideHandler))
 
 	// Define a separate handler for the /scalar endpoint
 	scalarHandler := http.StripPrefix(
@@ -76,21 +113,14 @@ func main() {
 		}
 	})
 
-	bucket := ratelimit.NewTokenBucket(bucketSize, bucketRate)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	bucket.Start(ctx)
+	return handler
+}
 
-	stack := CreateStack(AddRequestId, Logger, RateLimit(bucket))
-	server := http.Server{
-		Handler: stack(handler),
-		Addr:    fmt.Sprintf(":%d", port),
+func initStorage(db *sql.DB) {
+	if err := db.Ping(); err != nil {
+		logger.Error("DB initialization", slog.String("message", err.Error()))
+		os.Exit(1)
 	}
 
-	logger.Info(fmt.Sprintf("Server started on port :%d", port))
-	logger.Info(fmt.Sprintf("API documentation available on http://localhost:%d/docs", port))
-
-	if err := server.ListenAndServe(); err != nil {
-		logger.Error("Error", err.Error(), nil)
-	}
+	logger.Info("DB successfully connected")
 }

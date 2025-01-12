@@ -5,6 +5,8 @@ go 1.23.2
 require (
 	github.com/MarceloPetrucio/go-scalar-api-reference v0.0.0-20240521013641-ce5d2efe0e06
 	github.com/charmbracelet/log v0.4.0
+	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/swaggo/swag/v2 v2.0.0-rc4
 )
 
