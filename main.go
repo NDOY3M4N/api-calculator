@@ -41,16 +41,16 @@ var logger = slog.New(log.New(os.Stderr))
 // @servers.description Development server
 func main() {
 	db, err := NewDatabase(envs.DBString)
+	initStorage(db)
+	defer db.Close()
+
 	if err != nil {
 		panic(err)
 	}
 
-	initStorage(db)
-	defer db.Close()
+	router := http.NewServeMux()
 
 	repo := repository.New(db)
-
-	router := http.NewServeMux()
 	handler := NewHandler(repo).RegisterRoutes(router)
 
 	bucket := ratelimit.NewTokenBucket(bucketSize, bucketRate)

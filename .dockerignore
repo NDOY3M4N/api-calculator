@@ -1,6 +1,10 @@
 README.md
 LICENSE.md
+Makefile
+**/.github
 **/.git
+**/.envrc
+**/.env.example
 **/bench
 **/Dockerfile
 **/docker-compose*
