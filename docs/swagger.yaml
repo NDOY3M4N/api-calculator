@@ -5,6 +5,11 @@ components:
         error:
           type: string
       type: object
+    main.APILoginSuccess:
+      properties:
+        token:
+          type: string
+      type: object
     main.APISuccess:
       properties:
         result:
@@ -19,6 +24,17 @@ components:
           example: 9
           type: number
       type: object
+    main.PayloadLogin:
+      properties:
+        pseudo:
+          example: p4p1
+          type: string
+      type: object
+  securitySchemes:
+    bearerauth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http
 externalDocs:
   description: ""
   url: ""
@@ -58,6 +74,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/main.APIError'
           description: Bad Request
+      security:
+      - BearerAuth: []
       summary: Add two numbers
       tags:
       - Math
@@ -84,9 +102,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/main.APIError'
           description: Bad Request
+      security:
+      - BearerAuth: []
       summary: Divide two numbers
       tags:
       - Math
+  /login:
+    post:
+      description: Log the user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/main.PayloadLogin'
+        description: Field needed for login
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/main.APILoginSuccess'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/main.APIError'
+          description: Bad Request
+      summary: Login
+      tags:
+      - User
   /multiply:
     post:
       description: Multiply two numbers together
@@ -110,6 +156,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/main.APIError'
           description: Bad Request
+      security:
+      - BearerAuth: []
       summary: Multiply two numbers
       tags:
       - Math
@@ -136,6 +184,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/main.APIError'
           description: Bad Request
+      security:
+      - BearerAuth: []
       summary: Substract two numbers
       tags:
       - Math
@@ -164,6 +214,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/main.APIError'
           description: Bad Request
+      security:
+      - BearerAuth: []
       summary: Sum numbers
       tags:
       - Math

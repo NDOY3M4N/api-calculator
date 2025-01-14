@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
+
+	"github.com/MarceloPetrucio/go-scalar-api-reference"
 
 	"github.com/NDOY3M4N/api-calculator/repository"
 )
@@ -16,66 +19,131 @@ var (
 	ErrLengthSum    = errors.New("provide at least 2 numbers")
 )
 
-type number float64
-
 type Payload struct {
-	Number1 number `json:"number1" example:"6"`
-	Number2 number `json:"number2" example:"9"`
+	Number1 float64 `json:"number1" example:"6"`
+	Number2 float64 `json:"number2" example:"9"`
 }
 
-type PayloadSum []number
+type PayloadSum []float64
 
 type APIError struct {
 	Error string `json:"error"`
 }
 
 type APISuccess struct {
-	Result number `json:"result"`
+	Result float64 `json:"result"`
 }
 
 type PayloadLogin struct {
-	Pseudo string `json:"pseudo"`
+	Pseudo string `json:"pseudo" example:"p4p1"`
 }
 
-func loginHandler(repo *repository.Repository) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var payload PayloadLogin
-		if err := decodeJSON(r, &payload); err != nil {
-			writeError(w, r, http.StatusBadRequest, err)
-			return
+type APILoginSuccess struct {
+	Token string `json:"token"`
+}
+
+type Handler struct {
+	repo *repository.Repository
+}
+
+func NewHandler(repo *repository.Repository) *Handler {
+	return &Handler{repo}
+}
+
+func (h *Handler) RegisterRoutes(router *http.ServeMux) http.HandlerFunc {
+	isAuth := IsAuthenticated(h.repo)
+
+	router.HandleFunc("POST /login", h.loginHandler)
+
+	router.HandleFunc("POST /add", isAuth(h.addHandler))
+	router.HandleFunc("POST /sum", isAuth(h.sumHandler))
+	router.HandleFunc("POST /substract", isAuth(h.substractHandler))
+	router.HandleFunc("POST /multiply", isAuth(h.multiplyHandler))
+	router.HandleFunc("POST /divide", isAuth(h.divideHandler))
+
+	// Define a separate handler for the /scalar endpoint
+	scalarHandler := http.StripPrefix(
+		"/docs",
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			htmlContent, err := scalar.ApiReferenceHTML(&scalar.Options{
+				SpecURL: "./docs/swagger.json",
+				CustomOptions: scalar.CustomOptions{
+					PageTitle: "P4P1's Calculator API doc",
+				},
+				// Layout:   scalar.LayoutClassic,
+				DarkMode: true,
+			})
+			if err != nil {
+				fmt.Printf("%v", err)
+			}
+
+			fmt.Fprintln(w, htmlContent)
+		}),
+	)
+
+	v1 := http.NewServeMux()
+	v1.Handle("/api/v1/", http.StripPrefix("/api/v1", router))
+
+	// Combine the v1 handler and the Scalar handler
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/docs" || strings.HasPrefix(r.URL.Path, "/docs") {
+			scalarHandler.ServeHTTP(w, r)
+		} else {
+			v1.ServeHTTP(w, r)
 		}
+	})
 
-		if payload.Pseudo == "" {
-			writeError(w, r, http.StatusBadRequest, fmt.Errorf("pseudo should not be empty"))
-			return
-		}
+	return handler
+}
 
-		user, err := repo.FindUserByPseudo(payload.Pseudo)
-		if err != nil {
-			writeError(w, r, http.StatusBadRequest, fmt.Errorf("error finding user by pseudo"))
-			return
-		}
-
-		token, err := GenerateToken(int(user.Id))
-		if err != nil {
-			writeError(w, r, http.StatusBadRequest, fmt.Errorf("error generating token"))
-			return
-		}
-
-		reqID := r.Context().Value(requestIDKey).(string)
-
-		logger.Info("Request successful",
-			slog.Int("statusCode", http.StatusOK),
-			slog.String("remoteAddr", r.RemoteAddr),
-			slog.Group("request",
-				slog.String("id", reqID),
-				slog.String("method", r.Method),
-				slog.String("path", r.URL.Path),
-			),
-		)
-
-		encodeJSON(w, http.StatusOK, map[string]string{"token": token})
+// Login
+//
+// @summary Login
+// @description Log the user
+// @tags User
+// @accept json
+// @produce json
+// @param payload body PayloadLogin true "Field needed for login"
+// @success 200 {object} APILoginSuccess
+// @failure 400 {object} APIError
+// @router /login [post]
+func (h *Handler) loginHandler(w http.ResponseWriter, r *http.Request) {
+	var payload PayloadLogin
+	if err := decodeJSON(r, &payload); err != nil {
+		writeError(w, r, http.StatusBadRequest, err)
+		return
 	}
+
+	if payload.Pseudo == "" {
+		writeError(w, r, http.StatusBadRequest, fmt.Errorf("pseudo should not be empty"))
+		return
+	}
+
+	user, err := h.repo.FindUserByPseudo(payload.Pseudo)
+	if err != nil {
+		writeError(w, r, http.StatusBadRequest, fmt.Errorf("error finding user by pseudo"))
+		return
+	}
+
+	token, err := GenerateToken(int(user.Id))
+	if err != nil {
+		writeError(w, r, http.StatusBadRequest, fmt.Errorf("error generating token"))
+		return
+	}
+
+	reqID := r.Context().Value(requestIDKey).(string)
+
+	logger.Info("Request successful",
+		slog.Int("statusCode", http.StatusOK),
+		slog.String("remoteAddr", r.RemoteAddr),
+		slog.Group("request",
+			slog.String("id", reqID),
+			slog.String("method", r.Method),
+			slog.String("path", r.URL.Path),
+		),
+	)
+
+	encodeJSON(w, http.StatusOK, map[string]string{"token": token})
 }
 
 // Add two numbers
@@ -86,17 +154,32 @@ func loginHandler(repo *repository.Repository) http.HandlerFunc {
 // @accept json
 // @produce json
 // @param payload body Payload true "Numbers needed for the operation"
+// @Security BearerAuth
 // @success 200 {object} APISuccess
 // @failure 400 {object} APIError
 // @router /add [post]
-func addHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) addHandler(w http.ResponseWriter, r *http.Request) {
 	var payload Payload
 	if err := decodeJSON(r, &payload); err != nil {
 		writeError(w, r, http.StatusBadRequest, err)
 		return
 	}
 
+	userID := r.Context().Value(userIDKey).(int)
+
 	result := payload.Number1 + payload.Number2
+	param := repository.AddOperationParams{
+		Inputs: []float64{float64(payload.Number1), float64(payload.Number2)},
+		Type:   repository.TypeAdd,
+		Result: float64(result),
+		UserId: userID,
+	}
+
+	if err := h.repo.AddOperation(param); err != nil {
+		writeError(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
 	writeSuccess(w, r, http.StatusOK, result)
 }
 
@@ -108,10 +191,11 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 // @accept json
 // @produce json
 // @param payload body PayloadSum true "Array of numbers needed for the operation"
+// @Security BearerAuth
 // @success 200 {object} APISuccess
 // @failure 400 {object} APIError
 // @router /sum [post]
-func sumHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) sumHandler(w http.ResponseWriter, r *http.Request) {
 	var payload PayloadSum
 	if err := decodeJSON(r, &payload); err != nil {
 		writeError(w, r, http.StatusBadRequest, err)
@@ -123,9 +207,23 @@ func sumHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var result number
+	var result float64
 	for _, num := range payload {
 		result += num
+	}
+
+	userID := r.Context().Value(userIDKey).(int)
+
+	param := repository.AddOperationParams{
+		Inputs: payload,
+		Type:   repository.TypeSum,
+		Result: float64(result),
+		UserId: userID,
+	}
+
+	if err := h.repo.AddOperation(param); err != nil {
+		writeError(w, r, http.StatusInternalServerError, err)
+		return
 	}
 
 	writeSuccess(w, r, http.StatusOK, result)
@@ -139,10 +237,11 @@ func sumHandler(w http.ResponseWriter, r *http.Request) {
 // @accept json
 // @produce json
 // @param payload body Payload true "Numbers needed for the operation"
+// @Security BearerAuth
 // @success 200 {object} APISuccess
 // @failure 400 {object} APIError
 // @router /substract [post]
-func substractHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) substractHandler(w http.ResponseWriter, r *http.Request) {
 	var payload Payload
 	if err := decodeJSON(r, &payload); err != nil {
 		writeError(w, r, http.StatusBadRequest, err)
@@ -150,6 +249,21 @@ func substractHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result := payload.Number1 - payload.Number2
+
+	userID := r.Context().Value(userIDKey).(int)
+
+	param := repository.AddOperationParams{
+		Inputs: []float64{float64(payload.Number1), float64(payload.Number2)},
+		Type:   repository.TypeSubstract,
+		Result: float64(result),
+		UserId: userID,
+	}
+
+	if err := h.repo.AddOperation(param); err != nil {
+		writeError(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
 	writeSuccess(w, r, http.StatusOK, result)
 }
 
@@ -161,10 +275,11 @@ func substractHandler(w http.ResponseWriter, r *http.Request) {
 // @accept json
 // @produce json
 // @param payload body Payload true "Numbers needed for the operation"
+// @Security BearerAuth
 // @success 200 {object} APISuccess
 // @failure 400 {object} APIError
 // @router /multiply [post]
-func multiplyHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) multiplyHandler(w http.ResponseWriter, r *http.Request) {
 	var payload Payload
 	if err := decodeJSON(r, &payload); err != nil {
 		writeError(w, r, http.StatusBadRequest, err)
@@ -172,7 +287,22 @@ func multiplyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result := payload.Number1 * payload.Number2
-	encodeJSON(w, http.StatusOK, result)
+
+	userID := r.Context().Value(userIDKey).(int)
+
+	param := repository.AddOperationParams{
+		Inputs: []float64{float64(payload.Number1), float64(payload.Number2)},
+		Type:   repository.TypeMultiply,
+		Result: float64(result),
+		UserId: userID,
+	}
+
+	if err := h.repo.AddOperation(param); err != nil {
+		writeError(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
+	writeSuccess(w, r, http.StatusOK, result)
 }
 
 // divideHandler Foo
@@ -183,10 +313,11 @@ func multiplyHandler(w http.ResponseWriter, r *http.Request) {
 // @accept json
 // @produce json
 // @param payload body Payload true "Numbers needed for the operation"
+// @Security BearerAuth
 // @success 200 {object} APISuccess
 // @failure 400 {object} APIError
 // @router /divide [post]
-func divideHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) divideHandler(w http.ResponseWriter, r *http.Request) {
 	var payload Payload
 	if err := decodeJSON(r, &payload); err != nil {
 		writeError(w, r, http.StatusBadRequest, err)
@@ -199,6 +330,21 @@ func divideHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result := payload.Number1 / payload.Number2
+
+	userID := r.Context().Value(userIDKey).(int)
+
+	param := repository.AddOperationParams{
+		Inputs: []float64{float64(payload.Number1), float64(payload.Number2)},
+		Type:   repository.TypeDivide,
+		Result: float64(result),
+		UserId: userID,
+	}
+
+	if err := h.repo.AddOperation(param); err != nil {
+		writeError(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
 	writeSuccess(w, r, http.StatusOK, result)
 }
 
@@ -217,7 +363,7 @@ func encodeJSON(w http.ResponseWriter, statusCode int, payload any) error {
 	return json.NewEncoder(w).Encode(payload)
 }
 
-func writeSuccess(w http.ResponseWriter, r *http.Request, statusCode int, payload number) error {
+func writeSuccess(w http.ResponseWriter, r *http.Request, statusCode int, payload float64) error {
 	reqID := r.Context().Value(requestIDKey).(string)
 
 	logger.Info("Request successful",
