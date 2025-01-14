@@ -6,6 +6,47 @@
 
 The goal of this project is to create an http+json API for a calculator service.
 
+> [!WARNING]
+> This project is just for learning purposes and is not intended to be used in production.
+
+## Endpoints
+
+- `/api/v1/login` - Log the user
+- `/api/v1/sum` - Sum two numbers
+- `/api/v1/add` - Add two numbers
+- `/api/v1/substract` - Substract two numbers
+- `/api/v1/multiply` - Multiply two numbers
+- `/api/v1/divide` - Divide two numbers
+
+## Usage
+
+To use the Docker package, pull the image from the GitHub registry and run it:
+
+```sh
+docker pull ghcr.io/NDOY3M4N/api-calculator:latest
+docker compose up
+```
+
+> [!TIP]
+> Make sure to use the `./docker-compose.yml` file in the root of the repository when running the container.
+
+Before you can perform any operations you'll first need to login
+
+```bash
+curl -X POST http://localhost:3000/api/v1/login \
+  -H 'Content-Type: application/json' \
+  -d '{"pseudo":"b4tm4n"}'
+```
+
+Now you can perform any operation using the token that you received.
+
+```bash
+curl -X POST http://localhost:3000/api/v1/add \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer YOUR_SECRET_TOKEN' \
+  -d '{"number1":2, "number2": 2}'
+```
+
 ## Overview
 
 With this API, you can:
