@@ -7,7 +7,7 @@ CREATE TABLE operations (
   user_id INTEGER NOT NULL,
   created_at TEXT NOT NULL DEFAULT (DATETIME('now', 'localtime')),
   FOREIGN KEY (user_id) REFERENCES users (id),
-  CHECK (type IN ('add', 'subtract', 'multiply', 'divide', 'sum'))
+  CHECK (type IN ('add', 'substract', 'multiply', 'divide', 'sum'))
 );
 
 -- +goose Down
