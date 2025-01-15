@@ -1,6 +1,6 @@
 services:
   api-calculator:
-    image: ghcr.io/p4p1/api-calculator:latest
+    image: ghcr.io/ndoy3m4n/api-calculator:latest
     container_name: rest-server
     build:
       context: .
