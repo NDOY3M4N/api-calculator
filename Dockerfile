@@ -26,10 +26,9 @@ FROM gcr.io/distroless/base-debian11 AS build-release
 WORKDIR /
 
 COPY --from=build-stage /app/api-calculator /api-calculator
-COPY --from=build-stage /app/database.db /database.db
 COPY --from=build-stage /app/docs ./docs
 
-EXPOSE 8080
+EXPOSE 3000
 
 USER nonroot:nonroot
 

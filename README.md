@@ -62,6 +62,7 @@ With this API, you can:
 
 - [ ] Create an associated http client that can work with the calculator API.
 - [ ] Create a frontend that makes use of your API.
+- [x] Embed or create the sqlite db in a temp file
 - [x] Add in token authentication to prevent anyone unauthorized from using the API
 - [x] Add in a database to keep track of all of the calculations that have taken place
 - [x] Add in support for floating point numbers as well.

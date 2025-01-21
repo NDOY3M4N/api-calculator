@@ -6,7 +6,6 @@ services:
       context: .
     environment:
       - JWT_SECRET=${JWT_SECRET}
-      - DBSTRING=${GOOSE_DBSTRING}
     ports:
       - 3000:3000
     deploy:

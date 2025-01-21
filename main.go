@@ -15,9 +15,10 @@ import (
 )
 
 const (
-	port       int   = 3000
-	bucketSize int64 = 5
-	bucketRate int64 = 2
+	port       int    = 3000
+	bucketSize int64  = 5
+	bucketRate int64  = 2
+	dbFileName string = "api-calculator.db"
 )
 
 var logger = slog.New(log.New(os.Stderr))
@@ -40,12 +41,13 @@ var logger = slog.New(log.New(os.Stderr))
 // @servers.url http://localhost:3000/api/v1
 // @servers.description Development server
 func main() {
-	db, err := NewDatabase(envs.DBString)
+	db, err := NewDatabaseSqlite(dbFileName)
 	initStorage(db)
 	defer db.Close()
 
 	if err != nil {
-		panic(err)
+		logger.Error("DB connection", slog.String("message", err.Error()))
+		os.Exit(1)
 	}
 
 	router := http.NewServeMux()

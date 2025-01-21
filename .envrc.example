@@ -1,0 +1,5 @@
+# Rename this file to `.env` or load the variable into your system.
+# I'm using `https://direnv.net/` btw, you can use it
+export JWT_SECRET='something-secret'
+
+# vim:ft=sh
