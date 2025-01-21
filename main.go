@@ -42,6 +42,10 @@ var logger = slog.New(log.New(os.Stderr))
 // @servers.description Development server
 func main() {
 	db, err := NewDatabaseSqlite(dbFileName)
+	if err != nil {
+		logger.Error("DB Init", slog.String("message", err.Error()))
+		os.Exit(1)
+	}
 	initStorage(db)
 	defer db.Close()
 
