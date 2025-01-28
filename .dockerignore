@@ -1,10 +1,16 @@
-README.md
-LICENSE.md
-Makefile
-**/.github
+# Include any files or directories that you don't want to be copied to your
+# container here (e.g., local build artifacts, temporary files, etc.).
+#
+# For more help, visit the .dockerignore file reference guide at
+# https://docs.docker.com/go/build-context-dockerignore/
+
+**/.env
 **/.git
-**/.envrc
-**/.env.example
 **/bench
-**/Dockerfile
-**/docker-compose*
+**/.github
+**/.gitignore
+**/.dockerignore
+**/compose.y*ml
+**/Dockerfile*
+LICENSE
+README.md

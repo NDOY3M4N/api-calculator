@@ -24,11 +24,11 @@ To use the Docker package, pull the image from the GitHub registry and run it:
 
 ```sh
 docker pull ghcr.io/NDOY3M4N/api-calculator:latest
-docker compose up
+docker run \
+    -p 3000:3000 \
+    --env JWT_SECRET=my_secret_key \
+    ghcr.io/NDOY3M4N/api-calculator:latest
 ```
-
-> [!TIP]
-> Make sure to use the `./docker-compose.yml` file in the root of the repository when running the container.
 
 Before you can perform any operations you'll first need to login
 

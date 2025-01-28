@@ -18,7 +18,7 @@ const (
 	port       int    = 3000
 	bucketSize int64  = 5
 	bucketRate int64  = 2
-	dbFileName string = "api-calculator.db"
+	dbFileName string = "database.db"
 )
 
 var logger = slog.New(log.New(os.Stderr))
