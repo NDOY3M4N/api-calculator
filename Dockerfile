@@ -38,8 +38,6 @@ COPY --from=build /app/server /server
 COPY database.db database.db
 COPY docs docs
 
-# RUN chmod 666 /database.db
-
 EXPOSE 3000
 
 ENTRYPOINT ["/server"]

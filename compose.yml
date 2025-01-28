@@ -1,9 +1,7 @@
 services:
   server:
-    build:
-      context: .
-      target: final
+    image: ghcr.io/ndoy3m4n/api-calculator:latest
     ports:
       - 3000:3000
     environment:
-      - JWT_SECRET=${JWT_SECRET}
+      - JWT_SECRET=my-super-secret-key

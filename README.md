@@ -20,17 +20,12 @@ The goal of this project is to create an http+json API for a calculator service.
 
 ## Usage
 
-To use the Docker package, pull the image from the GitHub registry and run it:
+You can either build this project yourself or grab one from the [releases](http://github.com/NDOY3M4N/api-calculator/releases) page. You can also use this Docker [image](https://github.com/NDOY3M4N/api-calculator/pkgs/container/api-calculator) and follow the instructions in the `README.Docker.md`.
 
-```sh
-docker pull ghcr.io/NDOY3M4N/api-calculator:latest
-docker run \
-    -p 3000:3000 \
-    --env JWT_SECRET=my_secret_key \
-    ghcr.io/NDOY3M4N/api-calculator:latest
-```
+> [!NOTE]
+> The API documentation is available at `http://localhost:3000/docs`
 
-Before you can perform any operations you'll first need to login
+Before performing any operations you'll first need to login
 
 ```bash
 curl -X POST http://localhost:3000/api/v1/login \
